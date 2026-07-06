@@ -8,10 +8,10 @@
   --accent: #144f73;
   --good: #1f7a55;
   --warn: #a66a12;
-  --a: #b63e3a;
-  --b: #2f6fba;
-  --c: #257a58;
-  --d: #8b5c1f;
+  --c1: #b63e3a;
+  --c2: #257a58;
+  --c3: #2f6fba;
+  --c4: #8b5c1f;
   --shadow: 0 12px 28px rgba(23, 33, 43, 0.08);
 }
 
@@ -145,6 +145,13 @@ h2 {
   margin-bottom: 14px;
 }
 
+.file-status {
+  min-height: 20px;
+  margin: -6px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 label {
   display: grid;
   gap: 6px;
@@ -232,8 +239,8 @@ select {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas:
-    "A B"
-    "C D";
+    "C1 C3"
+    "C2 C4";
   gap: 12px;
   margin: 12px 0;
 }
@@ -245,20 +252,20 @@ select {
   background: #fff;
 }
 
-.arm[data-arm="A"] {
-  grid-area: A;
+.arm[data-arm="C1"] {
+  grid-area: C1;
 }
 
-.arm[data-arm="B"] {
-  grid-area: B;
+.arm[data-arm="C2"] {
+  grid-area: C2;
 }
 
-.arm[data-arm="C"] {
-  grid-area: C;
+.arm[data-arm="C3"] {
+  grid-area: C3;
 }
 
-.arm[data-arm="D"] {
-  grid-area: D;
+.arm[data-arm="C4"] {
+  grid-area: C4;
 }
 
 .arm-head {
@@ -271,20 +278,20 @@ select {
   font-weight: 800;
 }
 
-.arm[data-arm="A"] .arm-head {
-  color: var(--a);
+.arm[data-arm="C1"] .arm-head {
+  color: var(--c1);
 }
 
-.arm[data-arm="B"] .arm-head {
-  color: var(--b);
+.arm[data-arm="C2"] .arm-head {
+  color: var(--c2);
 }
 
-.arm[data-arm="C"] .arm-head {
-  color: var(--c);
+.arm[data-arm="C3"] .arm-head {
+  color: var(--c3);
 }
 
-.arm[data-arm="D"] .arm-head {
-  color: var(--d);
+.arm[data-arm="C4"] .arm-head {
+  color: var(--c4);
 }
 
 .arm-head small {
@@ -650,10 +657,10 @@ code {
 
   .arms {
     grid-template-areas:
-      "A"
-      "B"
-      "C"
-      "D";
+      "C1"
+      "C3"
+      "C2"
+      "C4";
   }
 
   .bridge-diagram {

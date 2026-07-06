@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>132kV H Type 96 Capacitor Bank Unbalanced Current</title>
-    <link rel="stylesheet" href="./styles.css?v=mobile-fix-20260630" />
+    <link rel="stylesheet" href="./styles.css?v=c1-c4-excel-auto-20260706" />
   </head>
   <body>
     <main class="app">
@@ -13,11 +13,13 @@
           <p class="project-label">Independent project: 132kV H Type Unbalanced Current</p>
           <h1>132kV H Type 96 Capacitor Bank</h1>
           <p>
-            A/B are the top left/right arms, C/D are the bottom left/right arms.
-            Each arm has 24 capacitors: 4 in parallel per group, 6 groups in series.
+            C1/C2/C3/C4 form the H bridge: C1 top left, C2 bottom left,
+            C3 top right, and C4 bottom right. Capacitors are numbered 1-96.
           </p>
         </div>
         <div class="actions">
+          <button id="loadFile" type="button">Load Excel/CSV</button>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
           <button id="loadExample" type="button">Example</button>
           <button id="resetAll" type="button">Reset</button>
         </div>
@@ -46,20 +48,22 @@
         </label>
         <label>
           <span>Nominal capacitance uF</span>
-          <input id="nominalCap" type="number" value="22" min="0" step="0.01" />
+          <input id="nominalCap" type="number" value="21.89" min="0" step="0.01" />
         </label>
         <label>
           <span>Swap pairs</span>
           <select id="swapPairs">
+            <option value="auto" selected>Auto: fewest pairs for best</option>
             <option value="1">1 pair</option>
             <option value="2">2 pairs</option>
-            <option value="3" selected>3 pairs</option>
+            <option value="3">3 pairs</option>
             <option value="4">4 pairs</option>
             <option value="5">5 pairs</option>
             <option value="6">6 pairs</option>
           </select>
         </label>
       </section>
+      <p id="fileStatus" class="file-status" aria-live="polite"></p>
 
       <section class="metrics" aria-live="polite">
         <article>
@@ -121,14 +125,15 @@
         <p>
           Parallel group: <code>G = C1 + C2 + C3 + C4</code>. Arm capacitance:
           <code>Carm = 1 / (1/G1 + ... + 1/G6)</code>. With relay treated as an
-          approximate short, top arms A/B are in parallel and bottom arms C/D are in
+          approximate short, top arms C1/C3 are in parallel and bottom arms C2/C4 are in
           parallel. The displayed unbalanced current is
           <code>|IA - IC|</code>, equivalent to
-          <code>wV |CA*CD - CB*CC| / (CA + CB + CC + CD)</code>.
+          <code>wV |C1*C4 - C3*C2| / (C1 + C2 + C3 + C4)</code>.
         </p>
       </section>
     </main>
 
-    <script src="./app.js?v=mobile-fix-20260630"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="./app.js?v=c1-c4-excel-auto-20260706"></script>
   </body>
 </html>

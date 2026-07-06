@@ -1,9 +1,9 @@
-const ARM_ORDER = ["A", "B", "C", "D"];
+const ARM_ORDER = ["C1", "C2", "C3", "C4"];
 const ARM_LABELS = {
-  A: "A top left",
-  B: "B top right",
-  C: "C bottom left",
-  D: "D bottom right",
+  C1: "C1 top left",
+  C2: "C2 bottom left",
+  C3: "C3 top right",
+  C4: "C4 bottom right",
 };
 const GROUPS_PER_ARM = 6;
 const CAPS_PER_GROUP = 4;
@@ -16,6 +16,8 @@ const voltageBasisEl = document.querySelector("#voltageBasis");
 const frequencyEl = document.querySelector("#frequency");
 const nominalCapEl = document.querySelector("#nominalCap");
 const swapPairsEl = document.querySelector("#swapPairs");
+const fileInputEl = document.querySelector("#fileInput");
+const fileStatusEl = document.querySelector("#fileStatus");
 const currentUnbalanceEl = document.querySelector("#currentUnbalance");
 const bestUnbalanceEl = document.querySelector("#bestUnbalance");
 const improvementEl = document.querySelector("#improvement");
@@ -47,17 +49,16 @@ function capMeta(index) {
     armIndex,
     groupIndex,
     slotIndex,
-    position: `${arm}-G${groupIndex + 1}-${slotIndex + 1}`,
+    position: `${arm} G${groupIndex + 1} slot ${slotIndex + 1}`,
   };
 }
 
 function makeCapId(index) {
-  const meta = capMeta(index);
-  return `${meta.arm}${String(meta.groupIndex + 1).padStart(2, "0")}-${meta.slotIndex + 1}`;
+  return `${index + 1}`;
 }
 
 function makeDefaultCaps() {
-  const nominal = readNumber(nominalCapEl, 22);
+  const nominal = readNumber(nominalCapEl, 21.89);
   return Array.from({ length: TOTAL_CAPS }, (_, index) => ({
     id: makeCapId(index),
     uf: nominal,
@@ -78,6 +79,12 @@ function formatUf(value) {
 
 function formatPercent(value) {
   return `${value.toFixed(4)}%`;
+}
+
+function setFileStatus(message, isError = false) {
+  if (!fileStatusEl) return;
+  fileStatusEl.textContent = message;
+  fileStatusEl.classList.toggle("is-error", isError);
 }
 
 function getSystem() {
@@ -117,28 +124,28 @@ function calculate(layout, system = getSystem()) {
     });
   });
 
-  const ca = armUf.A;
-  const cb = armUf.B;
-  const cc = armUf.C;
-  const cd = armUf.D;
-  const cTop = ca + cb;
-  const cBottom = cc + cd;
+  const c1 = armUf.C1;
+  const c2 = armUf.C2;
+  const c3 = armUf.C3;
+  const c4 = armUf.C4;
+  const cTop = c1 + c3;
+  const cBottom = c2 + c4;
   const totalUf = cTop > 0 && cBottom > 0 ? (cTop * cBottom) / (cTop + cBottom) : 0;
   const omega = 2 * Math.PI * system.frequency;
   const totalCurrentA = system.sourceVoltage * omega * totalUf * 1e-6;
-  const ia = cTop > 0 ? totalCurrentA * (ca / cTop) : 0;
-  const ib = cTop > 0 ? totalCurrentA * (cb / cTop) : 0;
-  const ic = cBottom > 0 ? totalCurrentA * (cc / cBottom) : 0;
-  const id = cBottom > 0 ? totalCurrentA * (cd / cBottom) : 0;
-  const unbalanceA = Math.abs(ia - ic);
+  const i1 = cTop > 0 ? totalCurrentA * (c1 / cTop) : 0;
+  const i3 = cTop > 0 ? totalCurrentA * (c3 / cTop) : 0;
+  const i2 = cBottom > 0 ? totalCurrentA * (c2 / cBottom) : 0;
+  const i4 = cBottom > 0 ? totalCurrentA * (c4 / cBottom) : 0;
+  const unbalanceA = Math.abs(i1 - i2);
   const unbalanceMA = unbalanceA * 1000;
-  const balanceNumerator = ca * cd - cb * cc;
-  const balanceDenominator = ca * cd + cb * cc;
+  const balanceNumerator = c1 * c4 - c3 * c2;
+  const balanceDenominator = c1 * c4 + c3 * c2;
   const balanceErrorPercent =
     balanceDenominator !== 0 ? (balanceNumerator / balanceDenominator) * 100 : 0;
   const bridgeFormulaA =
-    ca + cb + cc + cd > 0
-      ? omega * system.sourceVoltage * Math.abs(balanceNumerator / (ca + cb + cc + cd)) * 1e-6
+    c1 + c2 + c3 + c4 > 0
+      ? omega * system.sourceVoltage * Math.abs(balanceNumerator / (c1 + c2 + c3 + c4)) * 1e-6
       : 0;
 
   return {
@@ -148,10 +155,10 @@ function calculate(layout, system = getSystem()) {
     armGroups,
     totalUf,
     totalCurrentA,
-    ia,
-    ib,
-    ic,
-    id,
+    i1,
+    i2,
+    i3,
+    i4,
     balanceNumerator,
     balanceErrorPercent,
     bridgeFormulaA,
@@ -189,7 +196,6 @@ function renderLayout() {
         label.innerHTML = `
           <div class="cap-top">
             <span class="cap-id">${cap.id}</span>
-            <span class="cap-position">${capMeta(index).position}</span>
           </div>
           <input data-index="${index}" type="number" min="0" step="0.001" value="${cap.uf}" />
         `;
@@ -230,8 +236,10 @@ function swapsFromState(state) {
   return swaps.reverse();
 }
 
-function optimizeLayout(original, swapPairs) {
+function optimizeLayout(original, swapPairsOption) {
   const system = getSystem();
+  const isAuto = swapPairsOption === "auto";
+  const maxPairs = isAuto ? 6 : Number.parseInt(swapPairsOption, 10);
   const initial = {
     layout: original.map((cap) => ({ ...cap })),
     score: calculate(original, system).unbalanceMA,
@@ -250,7 +258,7 @@ function optimizeLayout(original, swapPairs) {
   }
 
   let current = initial;
-  for (let depth = 1; depth <= swapPairs; depth += 1) {
+  for (let depth = 1; depth <= maxPairs; depth += 1) {
     let bestCandidate = null;
 
     for (const [a, b] of pairs) {
@@ -286,23 +294,29 @@ function optimizeLayout(original, swapPairs) {
     bestByDepth[depth] = current;
   }
 
+  const bestScore = Math.min(...bestByDepth.filter(Boolean).map((state) => state.score));
+  const best =
+    bestByDepth.find((state) => state && Math.abs(state.score - bestScore) <= 1e-9) || current;
+
   return {
-    best: current,
+    best,
     bestByDepth,
+    isAuto,
+    recommendedPairs: swapsFromState(best).length,
   };
 }
 
 function renderDetails(result) {
   const rows = [
     ["Effective voltage", `${(result.system.sourceVoltage / 1000).toFixed(6)} kV`],
-    ["A / B / C / D", `${formatUf(result.armUf.A)} / ${formatUf(result.armUf.B)} / ${formatUf(result.armUf.C)} / ${formatUf(result.armUf.D)}`],
-    ["Top equivalent A+B", formatUf(result.armUf.A + result.armUf.B)],
-    ["Bottom equivalent C+D", formatUf(result.armUf.C + result.armUf.D)],
+    ["C1 / C2 / C3 / C4", `${formatUf(result.armUf.C1)} / ${formatUf(result.armUf.C2)} / ${formatUf(result.armUf.C3)} / ${formatUf(result.armUf.C4)}`],
+    ["Top equivalent C1+C3", formatUf(result.armUf.C1 + result.armUf.C3)],
+    ["Bottom equivalent C2+C4", formatUf(result.armUf.C2 + result.armUf.C4)],
     ["Total equivalent", formatUf(result.totalUf)],
     ["Total current", formatA(result.totalCurrentA)],
-    ["IA / IC", `${formatA(result.ia)} / ${formatA(result.ic)}`],
-    ["IB / ID", `${formatA(result.ib)} / ${formatA(result.id)}`],
-    ["CA*CD - CB*CC", result.balanceNumerator.toExponential(6)],
+    ["I1 / I2", `${formatA(result.i1)} / ${formatA(result.i2)}`],
+    ["I3 / I4", `${formatA(result.i3)} / ${formatA(result.i4)}`],
+    ["C1*C4 - C3*C2", result.balanceNumerator.toExponential(6)],
     ["Formula cross-check", formatMA(result.bridgeFormulaA * 1000)],
   ];
 
@@ -355,6 +369,118 @@ function buildSwapRows(initial, swaps) {
   return rows;
 }
 
+function parseNumericCell(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return NaN;
+  const cleaned = value.trim().replace(/,/g, "");
+  if (!cleaned) return NaN;
+  const number = Number.parseFloat(cleaned);
+  return Number.isFinite(number) ? number : NaN;
+}
+
+function extractCapacitanceValues(rows) {
+  const paired = [];
+
+  rows.forEach((row) => {
+    const numericCells = row
+      .map((cell, column) => ({ column, value: parseNumericCell(cell) }))
+      .filter((cell) => Number.isFinite(cell.value));
+    if (numericCells.length < 2) return;
+    const id = numericCells[0].value;
+    if (!Number.isInteger(id) || id < 1 || id > TOTAL_CAPS) return;
+    const valueCell = [...numericCells].reverse().find((cell) => cell.column !== numericCells[0].column);
+    if (valueCell) paired.push({ id, value: valueCell.value });
+  });
+
+  const uniqueIds = new Set(paired.map((item) => item.id));
+  if (uniqueIds.size >= TOTAL_CAPS) {
+    return Array.from({ length: TOTAL_CAPS }, (_, index) => {
+      const row = paired.find((item) => item.id === index + 1);
+      return row ? row.value : NaN;
+    });
+  }
+
+  return rows
+    .flatMap((row) => row.map(parseNumericCell))
+    .filter((value) => Number.isFinite(value))
+    .slice(0, TOTAL_CAPS);
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim() !== "")) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => value.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function applyLoadedValues(values, sourceName) {
+  if (values.length < TOTAL_CAPS || values.some((value) => !Number.isFinite(value))) {
+    setFileStatus(`Could not find 96 capacitance values in ${sourceName}.`, true);
+    return;
+  }
+
+  capacitors = values.slice(0, TOTAL_CAPS).map((uf, index) => ({
+    id: makeCapId(index),
+    uf: Number(uf),
+  }));
+  lastBest = null;
+  lastRecord = null;
+  movedIds = new Map();
+  applyBestEl.disabled = true;
+  exportCsvEl.disabled = true;
+  swapListEl.innerHTML = "";
+  depthTableEl.innerHTML = "";
+  renderLayout();
+  updateSummary();
+  setFileStatus(`Loaded 96 capacitance values from ${sourceName}.`);
+}
+
+async function loadDataFile(file) {
+  const extension = file.name.split(".").pop().toLowerCase();
+  if (extension === "csv" || extension === "txt") {
+    const text = await file.text();
+    applyLoadedValues(extractCapacitanceValues(parseCsv(text)), file.name);
+    return;
+  }
+
+  if (!window.XLSX) {
+    setFileStatus("Excel parser is not available. Try CSV, or check the network connection.", true);
+    return;
+  }
+
+  const buffer = await file.arrayBuffer();
+  const workbook = window.XLSX.read(buffer, { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+  applyLoadedValues(extractCapacitanceValues(rows), file.name);
+}
+
 function createRecord(bestState) {
   const initial = capacitors.map((cap) => ({ ...cap }));
   const finalLayout = bestState.layout.map((cap) => ({ ...cap }));
@@ -367,6 +493,8 @@ function createRecord(bestState) {
     voltageKv: readNumber(systemVoltageEl, 132),
     voltageBasis: voltageBasisEl.value,
     frequency: readNumber(frequencyEl, 50),
+    swapMode: swapPairsEl.value,
+    recommendedPairs: swaps.length,
     beforeMA: before.unbalanceMA,
     afterMA: after.unbalanceMA,
     improvement:
@@ -384,6 +512,21 @@ function renderOptimization(result) {
   const swaps = swapsFromState(result.best);
   movedIds = new Map();
   swapListEl.innerHTML = "";
+  if (result.isAuto) {
+    const li = document.createElement("li");
+    li.className = "swap-card";
+    li.innerHTML = `
+      <div class="swap-title">
+        <span>Auto recommendation</span>
+        <span>${result.recommendedPairs} pair${result.recommendedPairs === 1 ? "" : "s"}</span>
+      </div>
+      <div class="swap-line">
+        <strong>Target</strong>
+        <span>Fewest swap pairs that reach the best result found up to 6 pairs.</span>
+      </div>
+    `;
+    swapListEl.appendChild(li);
+  }
   let cursor = capacitors.map((cap) => ({ ...cap }));
   swaps.forEach(([a, b], index) => {
     const moveClass = `move-${(index % 6) + 1}`;
@@ -446,6 +589,8 @@ function exportRecord() {
     ["Voltage kV", lastRecord.voltageKv],
     ["Voltage Basis", lastRecord.voltageBasis],
     ["Frequency Hz", lastRecord.frequency],
+    ["Swap Mode", lastRecord.swapMode],
+    ["Recommended Swap Pairs", lastRecord.recommendedPairs],
     ["Before Unbalanced Current mA", lastRecord.beforeMA.toFixed(6)],
     ["After Unbalanced Current mA", lastRecord.afterMA.toFixed(6)],
     ["Improvement %", lastRecord.improvement.toFixed(4)],
@@ -488,7 +633,7 @@ function exportRecord() {
 }
 
 function loadExample() {
-  const nominal = readNumber(nominalCapEl, 22);
+  const nominal = readNumber(nominalCapEl, 21.89);
   capacitors = Array.from({ length: TOTAL_CAPS }, (_, index) => {
     const wave = Math.sin(index * 1.73) * 0.018 + Math.cos(index * 0.41) * 0.011;
     const drift = index % 17 === 0 ? 0.035 : 0;
@@ -543,8 +688,24 @@ swapPairsEl.addEventListener("change", () => {
 
 document.querySelector("#optimize").addEventListener("click", () => {
   syncFromInputs();
-  const swapPairs = Number.parseInt(swapPairsEl.value, 10);
-  renderOptimization(optimizeLayout(capacitors, swapPairs));
+  renderOptimization(optimizeLayout(capacitors, swapPairsEl.value));
+});
+
+document.querySelector("#loadFile").addEventListener("click", () => {
+  fileInputEl.click();
+});
+
+fileInputEl.addEventListener("change", async () => {
+  const file = fileInputEl.files?.[0];
+  if (!file) return;
+  setFileStatus(`Loading ${file.name}...`);
+  try {
+    await loadDataFile(file);
+  } catch (error) {
+    setFileStatus(`Could not load ${file.name}: ${error.message}`, true);
+  } finally {
+    fileInputEl.value = "";
+  }
 });
 
 applyBestEl.addEventListener("click", () => {
