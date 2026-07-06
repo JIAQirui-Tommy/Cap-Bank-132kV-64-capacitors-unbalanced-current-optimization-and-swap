@@ -9,6 +9,8 @@ const GROUPS_PER_ARM = 6;
 const CAPS_PER_GROUP = 4;
 const CAPS_PER_ARM = GROUPS_PER_ARM * CAPS_PER_GROUP;
 const TOTAL_CAPS = ARM_ORDER.length * CAPS_PER_ARM;
+const DISPLAY_ZERO_MA = 0.0005;
+const MIN_USEFUL_IMPROVEMENT_MA = 0.001;
 
 const armsEl = document.querySelector("#arms");
 const systemVoltageEl = document.querySelector("#systemVoltage");
@@ -287,22 +289,32 @@ function optimizeLayout(original, swapPairsOption) {
 
     if (!bestCandidate || bestCandidate.score >= current.score) {
       bestByDepth[depth] = current;
+      if (isAuto) break;
       continue;
     }
 
+    const improvement = current.score - bestCandidate.score;
     current = bestCandidate;
     bestByDepth[depth] = current;
+
+    if (isAuto && (current.score < DISPLAY_ZERO_MA || improvement < MIN_USEFUL_IMPROVEMENT_MA)) {
+      break;
+    }
   }
 
-  const bestScore = Math.min(...bestByDepth.filter(Boolean).map((state) => state.score));
-  const best =
-    bestByDepth.find((state) => state && Math.abs(state.score - bestScore) <= 1e-9) || current;
+  const best = current;
 
   return {
     best,
     bestByDepth,
     isAuto,
     recommendedPairs: swapsFromState(best).length,
+    autoStopReason:
+      isAuto && current.score < DISPLAY_ZERO_MA
+        ? "Reached displayed 0.000 mA."
+        : isAuto
+          ? `Stopped when extra improvement was below ${MIN_USEFUL_IMPROVEMENT_MA.toFixed(3)} mA.`
+          : "",
   };
 }
 
@@ -521,8 +533,8 @@ function renderOptimization(result) {
         <span>${result.recommendedPairs} pair${result.recommendedPairs === 1 ? "" : "s"}</span>
       </div>
       <div class="swap-line">
-        <strong>Target</strong>
-        <span>Fewest swap pairs that reach the best result found up to 6 pairs.</span>
+        <strong>Rule</strong>
+        <span>${result.autoStopReason || "Fewest useful swap pairs."}</span>
       </div>
     `;
     swapListEl.appendChild(li);
