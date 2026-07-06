@@ -9,7 +9,6 @@ const GROUPS_PER_ARM = 6;
 const CAPS_PER_GROUP = 4;
 const CAPS_PER_ARM = GROUPS_PER_ARM * CAPS_PER_GROUP;
 const TOTAL_CAPS = ARM_ORDER.length * CAPS_PER_ARM;
-const DISPLAY_ZERO_MA = 0.0005;
 const MIN_USEFUL_IMPROVEMENT_MA = 0.001;
 
 const armsEl = document.querySelector("#arms");
@@ -69,6 +68,10 @@ function makeDefaultCaps() {
 
 function formatMA(value) {
   return `${value.toFixed(3)} mA`;
+}
+
+function isDisplayedZeroMA(value) {
+  return value.toFixed(3) === "0.000";
 }
 
 function formatA(value) {
@@ -297,7 +300,7 @@ function optimizeLayout(original, swapPairsOption) {
     current = bestCandidate;
     bestByDepth[depth] = current;
 
-    if (isAuto && (current.score < DISPLAY_ZERO_MA || improvement < MIN_USEFUL_IMPROVEMENT_MA)) {
+    if (isAuto && (isDisplayedZeroMA(current.score) || improvement < MIN_USEFUL_IMPROVEMENT_MA)) {
       break;
     }
   }
@@ -310,7 +313,7 @@ function optimizeLayout(original, swapPairsOption) {
     isAuto,
     recommendedPairs: swapsFromState(best).length,
     autoStopReason:
-      isAuto && current.score < DISPLAY_ZERO_MA
+      isAuto && isDisplayedZeroMA(current.score)
         ? "Reached displayed 0.000 mA."
         : isAuto
           ? `Stopped when extra improvement was below ${MIN_USEFUL_IMPROVEMENT_MA.toFixed(3)} mA.`
