@@ -3,17 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>132kV H Type 96 Capacitor Bank Unbalanced Current</title>
-    <link rel="stylesheet" href="./styles.css?v=template-black-arms-20260708" />
+    <title>132kV H Type 64 Capacitor Bank Unbalanced Current</title>
+    <link rel="stylesheet" href="./styles.css?v=64-capacitor-20260708" />
   </head>
   <body>
     <main class="app">
       <header class="topbar">
         <div>
-          <h1>132kV H Type 96 Capacitor Bank</h1>
+          <h1>132kV H Type 64 Capacitor Bank</h1>
           <p>
             C1/C2/C3/C4 form the H bridge: C1 top left, C2 bottom left,
-            C3 top right, and C4 bottom right. Capacitors are numbered 1-96.
+            C3 top right, and C4 bottom right. Capacitors are numbered 1-64.
+            Each C has 4 series groups, and each group has 4 capacitors in parallel.
           </p>
         </div>
         <div class="actions">
@@ -127,8 +128,8 @@
       <section class="formula">
         <h2>Calculation Model</h2>
         <p>
-          Parallel group: <code>G = C1 + C2 + C3 + C4</code>. Arm capacitance:
-          <code>Carm = 1 / (1/G1 + ... + 1/G6)</code>. With relay treated as an
+          Parallel group: <code>G = Ca + Cb + Cc + Cd</code>. Arm capacitance:
+          <code>Carm = 1 / (1/G1 + ... + 1/G4)</code>. With relay treated as an
           approximate short, top arms C1/C3 are in parallel and bottom arms C2/C4 are in
           parallel. The displayed unbalanced current is
           <code>|IA - IC|</code>, equivalent to
@@ -140,6 +141,6 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="./app.js?v=template-black-arms-20260708"></script>
+    <script src="./app.js?v=64-capacitor-20260708"></script>
   </body>
 </html>

@@ -6,7 +6,7 @@ const ARM_LABELS = {
   C3: "C3 top right",
   C4: "C4 bottom right",
 };
-const GROUPS_PER_ARM = 6;
+const GROUPS_PER_ARM = 4;
 const CAPS_PER_GROUP = 4;
 const CAPS_PER_ARM = GROUPS_PER_ARM * CAPS_PER_GROUP;
 const TOTAL_CAPS = ARM_ORDER.length * CAPS_PER_ARM;
@@ -569,7 +569,7 @@ function parseCsv(text) {
 
 function applyLoadedValues(values, sourceName) {
   if (values.length < TOTAL_CAPS || values.some((value) => !Number.isFinite(value))) {
-    setFileStatus(`Could not find 96 capacitance values in ${sourceName}.`, true);
+    setFileStatus(`Could not find 64 capacitance values in ${sourceName}.`, true);
     return;
   }
 
@@ -582,7 +582,7 @@ function applyLoadedValues(values, sourceName) {
   depthTableEl.innerHTML = "";
   renderLayout();
   updateSummary();
-  setFileStatus(`Loaded 96 capacitance values from ${sourceName} into ${currentPhase}.`);
+  setFileStatus(`Loaded 64 capacitance values from ${sourceName} into ${currentPhase}.`);
 }
 
 async function loadDataFile(file) {
@@ -612,7 +612,7 @@ function createRecord(bestState) {
   const after = calculate(finalLayout);
   const swaps = swapsFromState(bestState);
   return {
-    title: `132kV H Type 96 Capacitor Bank Unbalanced Current - ${currentPhase}`,
+    title: `132kV H Type 64 Capacitor Bank Unbalanced Current - ${currentPhase}`,
     phase: currentPhase,
     createdAt: new Date().toISOString(),
     voltageKv: readNumber(systemVoltageEl, 132),
@@ -738,7 +738,7 @@ function buildTemplateRows() {
 function downloadTemplate() {
   const rows = buildTemplateRows();
   const stamp = new Date().toISOString().slice(0, 10);
-  const baseName = `132kv-h-type-96cap-${currentPhase.toLowerCase()}-template-${stamp}`;
+  const baseName = `132kv-h-type-64cap-${currentPhase.toLowerCase()}-template-${stamp}`;
 
   if (window.XLSX) {
     const workbook = window.XLSX.utils.book_new();
@@ -800,7 +800,7 @@ function exportRecord() {
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
   downloadBlob(
     blob,
-    `132kv-h-type-96cap-${lastRecord.phase.toLowerCase()}-unbalanced-current-${new Date().toISOString().slice(0, 10)}.csv`,
+    `132kv-h-type-64cap-${lastRecord.phase.toLowerCase()}-unbalanced-current-${new Date().toISOString().slice(0, 10)}.csv`,
   );
 }
 
