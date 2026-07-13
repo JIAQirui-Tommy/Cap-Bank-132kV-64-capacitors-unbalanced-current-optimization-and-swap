@@ -656,6 +656,10 @@ select {
   justify-content: center;
 }
 
+.guide-groups div:nth-child(2) {
+  margin-bottom: 16px;
+}
+
 .guide-groups span {
   min-height: 34px;
   display: flex;
@@ -995,6 +999,10 @@ code {
   .guide-groups div {
     grid-template-columns: 34px repeat(4, minmax(28px, 42px));
     gap: 5px;
+  }
+
+  .guide-groups div:nth-child(2) {
+    margin-bottom: 10px;
   }
 
   .guide-groups span {
