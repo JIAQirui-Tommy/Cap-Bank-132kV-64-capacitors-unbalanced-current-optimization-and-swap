@@ -16,15 +16,17 @@ const armsEl = document.querySelector("#arms");
 const phaseOverviewEl = document.querySelector("#phaseOverview");
 const activePhaseLabelEls = document.querySelectorAll(".activePhaseLabel");
 const systemVoltageEl = document.querySelector("#systemVoltage");
-const voltageBasisEl = document.querySelector("#voltageBasis");
 const frequencyEl = document.querySelector("#frequency");
 const nominalCapEl = document.querySelector("#nominalCap");
+const ctRatioEl = document.querySelector("#ctRatio");
 const swapPairsEl = document.querySelector("#swapPairs");
 const fileInputEl = document.querySelector("#fileInput");
 const fileStatusEl = document.querySelector("#fileStatus");
 const downloadTemplateEl = document.querySelector("#downloadTemplate");
-const currentUnbalanceEl = document.querySelector("#currentUnbalance");
-const bestUnbalanceEl = document.querySelector("#bestUnbalance");
+const primaryUnbalanceEl = document.querySelector("#primaryUnbalance");
+const secondaryUnbalanceEl = document.querySelector("#secondaryUnbalance");
+const bestPrimaryUnbalanceEl = document.querySelector("#bestPrimaryUnbalance");
+const bestSecondaryUnbalanceEl = document.querySelector("#bestSecondaryUnbalance");
 const improvementEl = document.querySelector("#improvement");
 const balanceErrorEl = document.querySelector("#balanceError");
 const swapListEl = document.querySelector("#swapList");
@@ -172,11 +174,12 @@ function setFileStatus(message, isError = false) {
 
 function getSystem() {
   const kv = readNumber(systemVoltageEl, 132);
+  const ctRatio = Math.max(readNumber(ctRatioEl, 1), 0.000001);
   return {
-    sourceVoltage: (voltageBasisEl.value === "phase" ? kv / Math.sqrt(3) : kv) * 1000,
+    sourceVoltage: (kv / Math.sqrt(3)) * 1000,
     displayKv: kv,
-    basis: voltageBasisEl.value,
     frequency: readNumber(frequencyEl, 50),
+    ctRatio,
   };
 }
 
@@ -222,6 +225,8 @@ function calculate(layout, system = getSystem()) {
   const i4 = cBottom > 0 ? totalCurrentA * (c4 / cBottom) : 0;
   const unbalanceA = Math.abs(i1 - i2);
   const unbalanceMA = unbalanceA * 1000;
+  const secondaryUnbalanceA = unbalanceA / system.ctRatio;
+  const secondaryUnbalanceMA = unbalanceMA / system.ctRatio;
   const balanceNumerator = c1 * c4 - c3 * c2;
   const balanceDenominator = c1 * c4 + c3 * c2;
   const balanceErrorPercent =
@@ -234,6 +239,8 @@ function calculate(layout, system = getSystem()) {
   return {
     unbalanceMA,
     unbalanceA,
+    secondaryUnbalanceMA,
+    secondaryUnbalanceA,
     armUf,
     armGroups,
     totalUf,
@@ -434,14 +441,6 @@ function renderDetails(result) {
   const rows = [
     ["Effective voltage", `${(result.system.sourceVoltage / 1000).toFixed(6)} kV`],
     ["C1 / C2 / C3 / C4", `${formatUf(result.armUf.C1)} / ${formatUf(result.armUf.C2)} / ${formatUf(result.armUf.C3)} / ${formatUf(result.armUf.C4)}`],
-    ["Top equivalent C1+C3", formatUf(result.armUf.C1 + result.armUf.C3)],
-    ["Bottom equivalent C2+C4", formatUf(result.armUf.C2 + result.armUf.C4)],
-    ["Total equivalent", formatUf(result.totalUf)],
-    ["Total current", formatA(result.totalCurrentA)],
-    ["I1 / I2", `${formatA(result.i1)} / ${formatA(result.i2)}`],
-    ["I3 / I4", `${formatA(result.i3)} / ${formatA(result.i4)}`],
-    ["C1*C4 - C3*C2", result.balanceNumerator.toExponential(6)],
-    ["Formula cross-check", formatMA(result.bridgeFormulaA * 1000)],
   ];
 
   detailsEl.innerHTML = rows
@@ -458,8 +457,10 @@ function updateSummary(bestState = lastBest) {
       ? ((current.unbalanceMA - best.unbalanceMA) / current.unbalanceMA) * 100
       : 0;
 
-  currentUnbalanceEl.textContent = formatMA(current.unbalanceMA);
-  bestUnbalanceEl.textContent = formatMA(best.unbalanceMA);
+  primaryUnbalanceEl.textContent = formatMA(current.unbalanceMA);
+  secondaryUnbalanceEl.textContent = formatMA(current.secondaryUnbalanceMA);
+  bestPrimaryUnbalanceEl.textContent = formatMA(best.unbalanceMA);
+  bestSecondaryUnbalanceEl.textContent = formatMA(best.secondaryUnbalanceMA);
   improvementEl.textContent = `${Math.max(0, improvement).toFixed(1)}%`;
   balanceErrorEl.textContent = formatPercent(current.balanceErrorPercent);
 
@@ -616,7 +617,6 @@ function createRecord(bestState) {
     phase: currentPhase,
     createdAt: new Date().toISOString(),
     voltageKv: readNumber(systemVoltageEl, 132),
-    voltageBasis: voltageBasisEl.value,
     frequency: readNumber(frequencyEl, 50),
     swapMode: swapPairsEl.value,
     recommendedPairs: swaps.length,
@@ -763,7 +763,6 @@ function exportRecord() {
     ["Phase", lastRecord.phase],
     ["Created At", lastRecord.createdAt],
     ["Voltage kV", lastRecord.voltageKv],
-    ["Voltage Basis", lastRecord.voltageBasis],
     ["Frequency Hz", lastRecord.frequency],
     ["Swap Mode", lastRecord.swapMode],
     ["Recommended Swap Pairs", lastRecord.recommendedPairs],
@@ -833,7 +832,7 @@ armsEl.addEventListener("input", () => {
   updateSummary();
 });
 
-[systemVoltageEl, voltageBasisEl, frequencyEl, nominalCapEl].forEach((el) => {
+[systemVoltageEl, frequencyEl, nominalCapEl, ctRatioEl].forEach((el) => {
   el.addEventListener("input", () => updateSummary(lastBest));
   el.addEventListener("change", () => updateSummary(lastBest));
 });
