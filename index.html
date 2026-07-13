@@ -94,42 +94,6 @@
         </article>
       </section>
 
-      <section class="main-grid">
-        <section class="bridge-panel" aria-label="H type capacitor bridge">
-          <div class="bridge-heading">
-            <h2>H Type Layout</h2>
-            <div class="button-row">
-              <button id="optimize" type="button">Optimize swaps</button>
-              <button id="applyBest" type="button" disabled>Apply</button>
-              <button id="exportCsv" type="button" disabled>Export CSV</button>
-            </div>
-          </div>
-          <div class="bridge-diagram">
-            <div class="bus top-bus"><span class="activePhaseLabel">L1</span> 132kV source</div>
-            <div class="arms" id="arms"></div>
-            <div class="relay-line"><span>relay / CT branch, approximate short-circuit model</span></div>
-            <div class="bus bottom-bus"><span class="activePhaseLabel">L1</span> neutral / ground</div>
-          </div>
-        </section>
-
-        <aside class="side">
-          <section class="panel">
-            <h2>Swap Recommendation</h2>
-            <ol id="swapList" class="swap-list"></ol>
-          </section>
-
-          <section class="panel">
-            <h2>Best By Number Of Swap Pairs</h2>
-            <div id="depthTable" class="depth-table"></div>
-          </section>
-
-          <section class="panel">
-            <h2>Calculation Details</h2>
-            <div id="details" class="details"></div>
-          </section>
-        </aside>
-      </section>
-
       <section class="visual-guide" aria-label="Physical capacitor position guide">
         <div class="guide-head">
           <h2>Visual Guide</h2>
@@ -180,6 +144,42 @@
             </div>
           </section>
         </div>
+      </section>
+
+      <section class="main-grid">
+        <section class="bridge-panel" aria-label="H type capacitor bridge">
+          <div class="bridge-heading">
+            <h2>H Type Layout</h2>
+            <div class="button-row">
+              <button id="optimize" type="button">Optimize swaps</button>
+              <button id="applyBest" type="button" disabled>Apply</button>
+              <button id="exportCsv" type="button" disabled>Export CSV</button>
+            </div>
+          </div>
+          <div class="bridge-diagram">
+            <div class="bus top-bus"><span class="activePhaseLabel">L1</span> 132kV source</div>
+            <div class="arms" id="arms"></div>
+            <div class="relay-line"><span>relay / CT branch, approximate short-circuit model</span></div>
+            <div class="bus bottom-bus"><span class="activePhaseLabel">L1</span> neutral / ground</div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <section class="panel">
+            <h2>Swap Recommendation</h2>
+            <ol id="swapList" class="swap-list"></ol>
+          </section>
+
+          <section class="panel">
+            <h2>Best By Number Of Swap Pairs</h2>
+            <div id="depthTable" class="depth-table"></div>
+          </section>
+
+          <section class="panel">
+            <h2>Calculation Details</h2>
+            <div id="details" class="details"></div>
+          </section>
+        </aside>
       </section>
 
       <section class="formula">
