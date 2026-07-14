@@ -629,91 +629,31 @@ select {
   background: var(--back);
 }
 
-.guide-arm {
-  padding: 12px;
-  border-top: 1px solid var(--line);
-}
-
-.guide-arm + .guide-arm {
-  border-top: 4px solid #eef2f6;
-}
-
-.guide-arm-title {
-  font-weight: 900;
-  margin-bottom: 8px;
-}
-
-.guide-groups {
+.tower-side {
   display: grid;
-  gap: 6px;
+  grid-template-rows: auto auto 1fr;
 }
 
-.guide-groups div {
-  display: grid;
-  grid-template-columns: 52px repeat(4, minmax(38px, 58px));
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
-.guide-groups div:nth-child(2) {
-  margin-bottom: 16px;
-}
-
-.guide-groups span {
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-}
-
-.guide-groups span {
-  background: #edf2f6;
+.tower-caption {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.guide-groups b {
-  position: relative;
-  width: min(100%, 48px);
-  min-height: 76px;
-  justify-self: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #aebbc8;
-  border-radius: 7px;
-  background: linear-gradient(180deg, #ffffff 0%, #eef3f7 100%);
-  box-shadow:
-    inset 0 0 0 2px #f8fbfd,
-    0 1px 2px rgba(23, 33, 43, 0.08);
-  color: var(--ink);
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 800;
+  text-align: center;
 }
 
-.guide-groups b::before,
-.guide-groups b::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 15px;
-  height: 15px;
-  transform: translateX(-50%);
-  border: 2px solid #516171;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px #d8e0e8;
+.tower-canvas {
+  background: #ffffff;
+  padding: 10px;
 }
 
-.guide-groups b::before {
-  top: 8px;
-}
-
-.guide-groups b::after {
-  bottom: 8px;
+.tower-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 720px;
+  margin: 0 auto;
 }
 
 .formula {
@@ -994,40 +934,6 @@ code {
   .visual-guide,
   .formula {
     padding: 11px;
-  }
-
-  .guide-groups div {
-    grid-template-columns: 34px repeat(4, minmax(28px, 42px));
-    gap: 5px;
-  }
-
-  .guide-groups div:nth-child(2) {
-    margin-bottom: 10px;
-  }
-
-  .guide-groups span {
-    min-height: 30px;
-    font-size: 11px;
-  }
-
-  .guide-groups b {
-    width: min(100%, 36px);
-    min-height: 62px;
-    font-size: 11px;
-  }
-
-  .guide-groups b::before,
-  .guide-groups b::after {
-    width: 11px;
-    height: 11px;
-  }
-
-  .guide-groups b::before {
-    top: 7px;
-  }
-
-  .guide-groups b::after {
-    bottom: 7px;
   }
 
   .swap-line {

@@ -34,6 +34,8 @@ const depthTableEl = document.querySelector("#depthTable");
 const detailsEl = document.querySelector("#details");
 const applyBestEl = document.querySelector("#applyBest");
 const exportCsvEl = document.querySelector("#exportCsv");
+const frontTowerCanvasEl = document.querySelector("#frontTowerCanvas");
+const rearTowerCanvasEl = document.querySelector("#rearTowerCanvas");
 
 let capacitors = [];
 let lastBest = null;
@@ -170,6 +172,224 @@ function setFileStatus(message, isError = false) {
   if (!fileStatusEl) return;
   fileStatusEl.textContent = message;
   fileStatusEl.classList.toggle("is-error", isError);
+}
+
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+  return el;
+}
+
+function drawCapacitorTower(target, { title, startNumber, armLabels }) {
+  if (!target) return;
+  const cfg = {
+    width: 920,
+    height: 980,
+    frame: "#20252B",
+    blue: "#0055FF",
+    black: "#202020",
+    frameX: 170,
+    frameW: 560,
+    frameH: 188,
+    tierY: [62, 292, 522, 752],
+    layerOffsets: [58, 138],
+    capStartX: 245,
+    capGap: 122,
+    capW: 48,
+    capH: 68,
+    pointRadius: 7,
+  };
+  const capCentersX = Array.from({ length: 4 }, (_, index) => cfg.capStartX + index * cfg.capGap);
+  const leftX = capCentersX[0];
+  const rightX = capCentersX[capCentersX.length - 1];
+  const topPointY = (layerY) => layerY - cfg.capH / 2 + 13;
+  const bottomPointY = (layerY) => layerY + cfg.capH / 2 - 13;
+  const terminalPoints = [];
+  const capAnchors = new Map();
+  const svg = svgEl("svg", {
+    viewBox: `0 0 ${cfg.width} ${cfg.height}`,
+    role: "img",
+    "aria-label": `${title} left-side cascaded capacitor tower`,
+  });
+
+  svg.appendChild(svgEl("rect", { x: 0, y: 0, width: cfg.width, height: cfg.height, fill: "#FFFFFF" }));
+
+  const titleEl = svgEl("text", {
+    x: 460,
+    y: 34,
+    "text-anchor": "middle",
+    fill: "#17212b",
+    "font-size": 24,
+    "font-weight": 800,
+  });
+  titleEl.textContent = title;
+  svg.appendChild(titleEl);
+
+  armLabels.forEach((label, index) => {
+    const startTier = index * 2;
+    const groupY = cfg.tierY[startTier] - 12;
+    const groupH = cfg.tierY[startTier + 1] + cfg.frameH - groupY + 12;
+    svg.appendChild(svgEl("rect", {
+      x: cfg.frameX - 88,
+      y: groupY,
+      width: cfg.frameW + 116,
+      height: groupH,
+      rx: 10,
+      fill: "none",
+      stroke: index === 0 ? "#6B7280" : "#9CA3AF",
+      "stroke-width": 2,
+      "stroke-dasharray": "8 8",
+    }));
+
+    const labelEl = svgEl("text", {
+      x: cfg.frameX - 44,
+      y: groupY + groupH / 2 + 8,
+      "text-anchor": "middle",
+      fill: cfg.frame,
+      "font-size": 30,
+      "font-weight": 900,
+    });
+    labelEl.textContent = label;
+    svg.appendChild(labelEl);
+  });
+
+  cfg.tierY.forEach((tierY, tierIndex) => {
+    svg.appendChild(svgEl("rect", {
+      x: cfg.frameX,
+      y: tierY,
+      width: cfg.frameW,
+      height: cfg.frameH,
+      fill: "none",
+      stroke: cfg.frame,
+      "stroke-width": 2,
+    }));
+
+    cfg.layerOffsets.forEach((offset, layerIndex) => {
+      const layerY = tierY + offset;
+      capCentersX.forEach((x, capIndex) => {
+        const capNumber = startNumber + tierIndex * 8 + layerIndex * 4 + capIndex;
+        capAnchors.set(capNumber, {
+          x,
+          y: layerY,
+          rightX: x + cfg.capW / 2,
+        });
+        svg.appendChild(svgEl("rect", {
+          x: x - cfg.capW / 2,
+          y: layerY - cfg.capH / 2,
+          width: cfg.capW,
+          height: cfg.capH,
+          rx: 5,
+          fill: "#FFFFFF",
+          stroke: cfg.frame,
+          "stroke-width": 2,
+        }));
+        svg.appendChild(svgEl("circle", {
+          cx: x,
+          cy: topPointY(layerY),
+          r: cfg.pointRadius,
+          fill: cfg.black,
+        }));
+        svg.appendChild(svgEl("circle", {
+          cx: x,
+          cy: bottomPointY(layerY),
+          r: cfg.pointRadius,
+          fill: cfg.black,
+        }));
+        terminalPoints.push(
+          { x, y: topPointY(layerY) },
+          { x, y: bottomPointY(layerY) },
+        );
+
+        const capLabel = svgEl("text", {
+          x,
+          y: layerY + 5,
+          "text-anchor": "middle",
+          fill: cfg.black,
+          "font-size": 15,
+          "font-weight": 900,
+        });
+        capLabel.textContent = `${capNumber}`;
+        svg.appendChild(capLabel);
+      });
+    });
+  });
+
+  const blueGroup = svgEl("g", {
+    fill: "none",
+    stroke: cfg.blue,
+    "stroke-width": 5,
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+
+  const smallLayers = cfg.tierY.flatMap((tierY) =>
+    cfg.layerOffsets.map((offset) => {
+      const layerY = tierY + offset;
+      return {
+        topY: topPointY(layerY),
+        bottomY: bottomPointY(layerY),
+      };
+    }),
+  );
+
+  smallLayers.forEach(({ topY, bottomY }) => {
+    blueGroup.appendChild(svgEl("path", { d: `M ${leftX} ${topY} H ${rightX}` }));
+    blueGroup.appendChild(svgEl("path", { d: `M ${leftX} ${bottomY} H ${rightX}` }));
+  });
+  smallLayers.slice(0, -1).forEach((layer, index) => {
+    blueGroup.appendChild(svgEl("path", {
+      d: `M ${leftX} ${layer.bottomY} V ${smallLayers[index + 1].topY}`,
+    }));
+  });
+  const feedY = smallLayers[0].topY;
+  blueGroup.appendChild(svgEl("path", { d: `M 58 ${feedY} H ${leftX}` }));
+
+  const neutralCapNumber = startNumber === 1 ? 20 : 52;
+  const neutralAnchor = capAnchors.get(neutralCapNumber);
+  const neutralStartX = neutralAnchor.rightX;
+  const neutralStartY = neutralAnchor.y;
+  const terminalX = 805;
+  const terminalY = neutralStartY + 120;
+  blueGroup.appendChild(svgEl("path", { d: `M ${neutralStartX} ${neutralStartY} L ${terminalX} ${terminalY}` }));
+  svg.appendChild(blueGroup);
+
+  terminalPoints.forEach(({ x, y }) => {
+    svg.appendChild(svgEl("circle", {
+      cx: x,
+      cy: y,
+      r: cfg.pointRadius,
+      fill: cfg.black,
+    }));
+  });
+
+  svg.appendChild(svgEl("circle", { cx: terminalX + 26, cy: terminalY, r: 18, fill: cfg.black }));
+  svg.appendChild(svgEl("rect", { x: terminalX + 8, y: terminalY + 23, width: 36, height: 18, rx: 3, fill: cfg.black }));
+
+  const terminalLabel = svgEl("text", {
+    x: terminalX + 26,
+    y: terminalY + 62,
+    "text-anchor": "middle",
+    fill: "#17212b",
+    "font-size": 13,
+    "font-weight": 800,
+  });
+  terminalLabel.textContent = "Neutral CT";
+  svg.appendChild(terminalLabel);
+
+  target.replaceChildren(svg);
+}
+
+function renderTowerGuides() {
+  drawCapacitorTower(frontTowerCanvasEl, {
+    title: "Front: C1 top / C2 bottom",
+    startNumber: 1,
+    armLabels: ["C1", "C2"],
+  });
+  drawCapacitorTower(rearTowerCanvasEl, {
+    title: "Rear: C3 top / C4 bottom",
+    startNumber: 33,
+    armLabels: ["C3", "C4"],
+  });
 }
 
 function getSystem() {
@@ -907,5 +1127,6 @@ phaseStates = Object.fromEntries(PHASE_ORDER.map((phase) => [phase, makePhaseSta
 loadPhaseState(currentPhase);
 setPhaseUi();
 renderLayout();
+renderTowerGuides();
 updateSummary();
 setFileStatus(`Showing ${currentPhase}. Load Excel/CSV will fill ${currentPhase} only.`);
